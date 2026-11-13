@@ -1,0 +1,962 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>KoboHunt</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a phone-sized game on the left (live tilted campus map plus five tabs) and the founder's
+   revenue model on the right. On a phone the model slides over the game. Light theme is the
+   daytime campus, dark theme is the night hunt; the map reads the same tokens as the UI. */
+:root{
+  --bg:#e6eadb; --panel:#fbfaf3; --panel-2:#efeee2; --line:#d6d5c3;
+  --ink:#161b3e; --ink-2:#565b7b;
+  --indigo:#2b379f; --on-indigo:#ffffff; --indigo-soft:#e2e4f6;
+  --coin:#eba91c; --coin-text:#855300; --on-coin:#2b1d00;
+  --mint:#0c8a5e; --mint-soft:#d9f0e5; --laterite:#b84e27; --laterite-soft:#f6e1d6;
+  --scrim:rgba(18,22,52,.46); --glass:rgba(251,250,243,.92);
+  --m-sky1:#bfe0f0; --m-sky2:#f1e7cc; --m-ground:#aed192; --m-field:#93c57a;
+  --m-road:#dc9c70; --m-road-edge:#c17f55; --m-roof:#f8f1e0; --m-wall:#dccfb1; --m-wall2:#c2b493;
+  --m-window:#6f86a8; --m-tree:#3f9159; --m-tree2:#2e7647; --m-shadow:rgba(20,45,25,.22);
+  --m-label:#1b2242; --m-halo:#fbfaf3; --m-claimed:#8a8f7c;
+  --f-display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Spline Sans Mono",ui-monospace,"SF Mono",Consolas,monospace;
+  --r:18px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#080b1e; --panel:#111634; --panel-2:#1a2048; --line:#2b3264;
+    --ink:#f1eee2; --ink-2:#a6aacb;
+    --indigo:#8a97ff; --on-indigo:#0b0f2a; --indigo-soft:#232a5c;
+    --coin:#f6b93b; --coin-text:#ffd679; --on-coin:#2b1d00;
+    --mint:#45d6a0; --mint-soft:#143d38; --laterite:#f08a5d; --laterite-soft:#3d2320;
+    --scrim:rgba(3,5,16,.62); --glass:rgba(17,22,52,.9);
+    --m-sky1:#0a0f2e; --m-sky2:#2c2a5c; --m-ground:#173a34; --m-field:#1d4d40;
+    --m-road:#7d4029; --m-road-edge:#5c2c1c; --m-roof:#2c3569; --m-wall:#202852; --m-wall2:#171d40;
+    --m-window:#f6c65a; --m-tree:#1f5e48; --m-tree2:#164636; --m-shadow:rgba(0,0,0,.38);
+    --m-label:#ecead9; --m-halo:#0d1230; --m-claimed:#4e5576;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#080b1e; --panel:#111634; --panel-2:#1a2048; --line:#2b3264;
+  --ink:#f1eee2; --ink-2:#a6aacb;
+  --indigo:#8a97ff; --on-indigo:#0b0f2a; --indigo-soft:#232a5c;
+  --coin:#f6b93b; --coin-text:#ffd679; --on-coin:#2b1d00;
+  --mint:#45d6a0; --mint-soft:#143d38; --laterite:#f08a5d; --laterite-soft:#3d2320;
+  --scrim:rgba(3,5,16,.62); --glass:rgba(17,22,52,.9);
+  --m-sky1:#0a0f2e; --m-sky2:#2c2a5c; --m-ground:#173a34; --m-field:#1d4d40;
+  --m-road:#7d4029; --m-road-edge:#5c2c1c; --m-roof:#2c3569; --m-wall:#202852; --m-wall2:#171d40;
+  --m-window:#f6c65a; --m-tree:#1f5e48; --m-tree2:#164636; --m-shadow:rgba(0,0,0,.38);
+  --m-label:#ecead9; --m-halo:#0d1230; --m-claimed:#4e5576;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--f-body);-webkit-font-smoothing:antialiased;overflow:hidden}
+h1,h2,h3,p,ul,ol,dl,dd{margin:0}
+ul,ol{padding:0;list-style:none}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.1;letter-spacing:-.01em}
+h1{font-size:30px;font-weight:800}
+h2{font-size:22px;font-weight:800}
+h3{font-size:17px;font-weight:600}
+.mono{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-2);letter-spacing:.01em}
+.meta{font-size:13px;color:var(--ink-2)}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2)}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- shell ---------- */
+.stage{height:100%;display:grid;grid-template-columns:minmax(0,1fr)}
+.app{height:100%;min-width:0;display:flex;flex-direction:column;background:var(--panel);position:relative;overflow:hidden}
+.top{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel);z-index:3}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.brand strong{font-family:var(--f-display);font-weight:800;font-size:19px;display:block;line-height:1}
+.brand .where{font-size:11.5px;color:var(--ink-2);display:block;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mark{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--coin);color:var(--on-coin);font-weight:800;font-size:18px;box-shadow:inset 0 0 0 3px rgba(255,255,255,.35),inset 0 -3px 0 rgba(0,0,0,.14)}
+.mark.sm{width:28px;height:28px;font-size:15px}
+.pill{border:1px solid var(--line);background:var(--panel-2);border-radius:999px;padding:7px 13px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill.bump{animation:bump .5s ease}
+@keyframes bump{40%{transform:scale(1.12);background:var(--coin);color:var(--on-coin)}}
+
+.btn{border:1px solid transparent;border-radius:14px;padding:12px 16px;font-weight:700;background:var(--panel-2);color:var(--ink);text-align:center}
+.btn.primary{background:var(--indigo);color:var(--on-indigo)}
+.btn.gold{background:var(--coin);color:var(--on-coin)}
+.btn.ghost{background:transparent;border-color:var(--line)}
+.btn.sm{padding:7px 12px;border-radius:999px;font-size:13px}
+.btn.wide{width:100%}
+.btn:active{transform:translateY(1px)}
+
+.screen{flex:1;min-height:0;overflow-y:auto;padding:18px 16px 24px;display:flex;flex-direction:column;gap:16px}
+.screen.hunt{padding:0;overflow:hidden;position:relative;display:block}
+.head{display:flex;flex-direction:column;gap:4px}
+
+.tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid var(--line);background:var(--panel);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));z-index:3}
+.tab{background:none;border:0;border-radius:12px;padding:6px 2px 5px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:var(--ink-2)}
+.tab svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-current="page"]{color:var(--indigo);background:var(--indigo-soft)}
+
+/* ---------- hunt ---------- */
+#map{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:pointer}
+.overlay-top{position:absolute;left:12px;right:12px;top:10px;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.overlay-top > *{pointer-events:auto}
+.ad{position:relative;overflow:hidden;display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;padding:9px 12px}
+.ad-tag{flex:none;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.ad-dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--coin)}
+.ad-text{flex:1;min-width:0;font-size:13px;font-weight:600;line-height:1.25}
+.ad-go{flex:none;font-size:12px;font-weight:700;color:var(--indigo)}
+.ad-bar{position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--indigo);transform-origin:left;transform:scaleX(0)}
+.ad-bar.run{animation:adbar 6s linear forwards}
+@keyframes adbar{to{transform:scaleX(1)}}
+.notif{display:flex;gap:10px;align-items:flex-start;background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:16px;padding:10px 10px 10px 12px;box-shadow:0 14px 30px -18px var(--scrim)}
+.notif div{flex:1;min-width:0}
+.notif strong{font-size:14px}
+.notif p{font-size:13px;color:var(--ink-2);line-height:1.3}
+.x{flex:none;width:30px;height:30px;border-radius:50%;border:0;background:var(--panel-2);font-size:18px;line-height:1}
+.tools{position:absolute;right:12px;top:50%;transform:translateY(-70%);display:flex;flex-direction:column;gap:8px}
+.tool{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:grid;place-items:center}
+.tool svg{width:19px;height:19px;fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.hud{position:absolute;left:12px;right:12px;bottom:12px;background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:22px;padding:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 18px 40px -22px var(--scrim)}
+.hud-main{display:flex;align-items:center;gap:11px}
+.dial{flex:none;width:46px;height:46px}
+.dial svg{width:100%;height:100%}
+.dial .ring{fill:var(--indigo-soft);stroke:var(--indigo);stroke-width:1.5}
+.dial .needle{fill:var(--indigo)}
+.hud-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.hud-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hud-line strong{font-family:var(--f-display);font-weight:800;font-size:22px;line-height:1;font-variant-numeric:tabular-nums}
+.tag{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;background:var(--mint-soft);color:var(--mint);white-space:nowrap}
+.tag.sp{background:var(--laterite-soft);color:var(--laterite)}
+.tag.next{background:var(--panel-2);color:var(--ink-2)}
+#hPlace{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hud-dist{flex:none;text-align:right}
+.hud-dist strong{display:block;font-family:var(--f-display);font-size:22px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.hud-dist span{font-size:11px;color:var(--ink-2)}
+.hint{font-size:12px;color:var(--ink-2);text-align:center;margin-top:7px;line-height:1.3}
+
+.swipe{position:relative;height:58px;border-radius:999px;background:var(--indigo);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.swipe-fill{position:absolute;inset:0;background:var(--mint);transform-origin:left;transform:scaleX(var(--p,0))}
+.swipe-label{position:absolute;inset:0;display:grid;place-items:center;padding-left:52px;padding-right:14px;color:var(--on-indigo);font-weight:700;font-size:15px;pointer-events:none;text-align:center}
+.thumb{position:absolute;left:5px;top:5px;width:48px;height:48px;border-radius:50%;border:0;background:var(--coin);color:var(--on-coin);font-weight:800;font-size:22px;box-shadow:inset 0 0 0 3px rgba(255,255,255,.4),0 4px 10px rgba(0,0,0,.25);touch-action:none}
+.thumb.back{transition:transform .25s ease}
+.swipe.ready .thumb{animation:nudge 1.6s ease-in-out infinite}
+@keyframes nudge{0%,60%,100%{translate:0 0}30%{translate:12px 0}}
+
+/* ---------- lists ---------- */
+.seg{display:flex;gap:4px;background:var(--panel-2);border-radius:14px;padding:4px}
+.seg button{flex:1;border:0;background:none;border-radius:10px;padding:8px 6px;font-weight:600;font-size:13px;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 3px var(--m-shadow)}
+.list{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.row{width:100%;display:flex;align-items:center;gap:12px;padding:12px 2px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left}
+.row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.row-main strong{font-size:15px}
+.row-end{flex:none;text-align:right;display:flex;flex-direction:column;font-size:12px;color:var(--ink-2)}
+.row-end strong{font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
+.row-end em{font-style:normal;font-weight:700}
+.coin{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--coin);color:var(--on-coin);font-weight:800;box-shadow:0 0 0 3px var(--b,transparent)}
+.row.claimed{filter:grayscale(1);opacity:.5;cursor:default}
+.row.on .row-main strong{color:var(--indigo)}
+.rank{flex:none;width:26px;font-family:var(--f-display);font-weight:800;font-size:17px;color:var(--ink-2);text-align:center;font-variant-numeric:tabular-nums}
+.row.me{background:var(--indigo-soft);border-radius:12px;padding-inline:10px;border-bottom-color:transparent}
+.league{display:flex;flex-direction:column;gap:12px;padding-top:4px}
+.league li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:baseline;font-size:14px}
+.league b{font-weight:600}
+.track{grid-column:1/-1;height:8px;border-radius:99px;background:var(--panel-2);overflow:hidden}
+.track i{display:block;height:100%;width:var(--w,0%);background:var(--indigo);border-radius:99px;transition:width .4s ease}
+.track.gold i{background:var(--coin)}
+
+/* ---------- cards & forms ---------- */
+.card{border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--panel)}
+.note{background:var(--panel-2);border-radius:14px;padding:11px 13px;font-size:13px;color:var(--ink-2);line-height:1.4}
+.causes{display:flex;flex-direction:column;gap:8px}
+.cause{width:100%;text-align:left;border:1.5px solid var(--line);border-radius:16px;background:none;padding:12px 13px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px}
+.cause[aria-pressed="true"]{border-color:var(--indigo);background:var(--indigo-soft)}
+.cause strong{font-size:15px}
+.cause .meta{grid-column:1/-1;line-height:1.35}
+.cause .amt{font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:none;border-radius:999px;padding:8px 14px;font-weight:700;font-variant-numeric:tabular-nums}
+.chip[aria-pressed="true"]{border-color:var(--indigo);background:var(--indigo);color:var(--on-indigo)}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field label,.lbl{font-size:12px;font-weight:700;color:var(--ink-2)}
+.field input,.field select{width:100%;font-size:16px;padding:11px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);min-width:0}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.35}
+.check input{width:20px;height:20px;flex:none;margin:1px 0 0;accent-color:var(--indigo)}
+.err{color:var(--laterite);font-size:13px;font-weight:600}
+.balance{border-radius:22px;padding:18px;background:var(--indigo);color:var(--on-indigo);display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden}
+.balance::after{content:"₦";position:absolute;right:-8px;bottom:-58px;font:800 190px/1 var(--f-display);opacity:.12}
+.balance .eyebrow{color:inherit;opacity:.8}
+.balance .big{font:800 40px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;position:relative;z-index:1}
+.stats div{display:flex;flex-direction:column;font-size:11.5px;opacity:.95}
+.stats b{font-size:16px;font-variant-numeric:tabular-nums}
+.sum{display:flex;justify-content:space-between;gap:10px;font-size:14px}
+.sum b{font-variant-numeric:tabular-nums}
+.tx .row{cursor:default}
+.in{color:var(--mint)}
+
+.toast{position:absolute;left:50%;top:64px;translate:-50% 0;max-width:calc(100% - 32px);background:var(--ink);color:var(--panel);padding:9px 14px;border-radius:999px;font-size:13px;font-weight:600;z-index:6;text-align:center;pointer-events:none}
+.sheet{position:absolute;inset:0;background:var(--scrim);z-index:8;display:flex;align-items:flex-end}
+.sheet-in{width:100%;background:var(--panel);border-radius:26px 26px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px}
+.opts{display:flex;flex-direction:column;gap:8px}
+
+/* ---------- founder view ---------- */
+.founder{min-width:0;background:var(--bg)}
+.f-in{max-width:720px;display:flex;flex-direction:column;gap:22px;padding-bottom:28px}
+.f-head{display:flex;flex-direction:column;gap:8px}
+.f-head p{max-width:62ch;color:var(--ink-2)}
+.meter{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.big{font:800 34px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.meter dl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.meter dt{font-size:11.5px;color:var(--ink-2);line-height:1.2}
+.meter dd{font-weight:700;font-size:17px;font-variant-numeric:tabular-nums}
+.sliders{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 20px}
+.slider{display:flex;flex-direction:column;gap:4px;min-width:0}
+.slider span{display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:600}
+.slider output{font-variant-numeric:tabular-nums;color:var(--indigo)}
+.slider input{width:100%;accent-color:var(--indigo)}
+.totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 20px;border-top:1px solid var(--line);padding-top:14px}
+.streams{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.stream{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;padding:14px 0;border-bottom:1px solid var(--line);align-items:start}
+.stream h3{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.stream .meta{margin-top:3px;line-height:1.4}
+.s-val{font:800 18px/1.1 var(--f-display);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.s-ctl{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.rate{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2)}
+.rate input{width:92px;font-size:16px;padding:6px 8px;border-radius:10px;border:1.5px solid var(--line);background:var(--panel);font-variant-numeric:tabular-nums}
+.linkbtn{border:0;background:none;padding:0;color:var(--indigo);font-weight:700;font-size:13px;text-decoration:underline;text-underline-offset:3px}
+.stream .track{margin-top:2px}
+.rules{display:flex;flex-direction:column;gap:12px}
+.rules li{display:flex;flex-direction:column;gap:2px;max-width:66ch}
+.rules b{font-weight:700}
+.rules span{color:var(--ink-2);font-size:14px}
+.only-phone{display:inline-block}
+
+@media (max-width:899px){
+  .founder{position:fixed;inset:0;z-index:40;overflow-y:auto;display:none;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px))}
+  .founder.open{display:block}
+  .meter dl{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (min-width:900px){
+  .stage{grid-template-columns:minmax(0,410px) minmax(0,1fr);gap:32px;padding-inline:28px;padding-block:22px;max-width:1240px;margin-inline:auto}
+  .app{border-radius:30px;border:1px solid var(--line);box-shadow:0 30px 70px -40px var(--scrim);max-height:880px;align-self:center}
+  .founder{overflow-y:auto;padding:6px 6px 0 0}
+  .only-phone{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .swipe.ready .thumb,.ad-bar.run,.pill.bump{animation:none}
+  .track i,.thumb.back{transition:none}
+}
+</style>
+
+<div class="stage">
+  <main class="app" id="app">
+    <header class="top">
+      <div class="brand">
+        <span class="mark" aria-hidden="true">₦</span>
+        <div><strong>KoboHunt</strong><span class="where">UNN · Nsukka campus</span></div>
+      </div>
+      <button class="pill" id="balPill" type="button" aria-label="Open wallet">₦<span id="bal">0</span></button>
+      <button class="btn ghost sm only-phone" id="openModel" type="button">Model</button>
+    </header>
+
+    <section class="screen hunt" id="s-hunt" aria-label="Hunt map">
+      <canvas id="map" aria-label="Tilted map of the campus showing today's cash drops. The Drops tab lists the same drops as text."></canvas>
+      <div class="overlay-top">
+        <button class="ad" id="ad" type="button">
+          <span class="ad-tag">Sponsored</span>
+          <span class="ad-dot" id="adDot"></span>
+          <span class="ad-text" id="adText"></span>
+          <span class="ad-go">Go</span>
+          <i class="ad-bar" id="adBar"></i>
+        </button>
+        <div class="notif" id="notif" role="status">
+          <span class="mark sm" aria-hidden="true">₦</span>
+          <div><strong>Today's hunt is live</strong><p id="notifText"></p></div>
+          <button class="x" id="notifX" type="button" aria-label="Dismiss notification">×</button>
+        </div>
+      </div>
+      <div class="tools">
+        <button class="tool" id="rotL" type="button" aria-label="Turn camera left"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v4.5h4.5"/></svg></button>
+        <button class="tool" id="rotR" type="button" aria-label="Turn camera right"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v4.5h-4.5"/></svg></button>
+      </div>
+      <div class="hud" id="hud">
+        <div class="hud-main">
+          <div class="dial" aria-hidden="true"><svg viewBox="0 0 40 40"><circle class="ring" cx="20" cy="20" r="18"/><g id="needle"><path class="needle" d="M20 6 27 27 20 23 13 27Z"/></g></svg></div>
+          <div class="hud-info">
+            <div class="hud-line"><strong id="hAmt"></strong><span class="tag" id="hTag"></span></div>
+            <div id="hPlace"></div>
+            <div class="mono" id="hCoord"></div>
+          </div>
+          <div class="hud-dist"><strong id="hDist">0</strong><span id="hUnit">m away</span></div>
+        </div>
+        <div id="hFar">
+          <button class="btn primary wide" id="walk" type="button">Directions: walk me there</button>
+          <p class="hint">Tap the map to walk, tap a coin to target it, drag sideways to turn. Walking is sped up for this demo.</p>
+        </div>
+        <div id="hNear" hidden>
+          <div class="swipe" id="swipe">
+            <i class="swipe-fill"></i>
+            <span class="swipe-label" id="swipeLabel"></span>
+            <button class="thumb" id="thumb" type="button" aria-label="Collect this drop">₦</button>
+          </div>
+        </div>
+        <p class="hint" id="hDone" hidden>Every drop is claimed. New drops land at 7:00 tomorrow.</p>
+      </div>
+    </section>
+
+    <section class="screen" id="s-drops" hidden>
+      <div class="head"><h2>Today's drops</h2><p class="meta" id="dropSum"></p></div>
+      <div class="seg" id="dropSeg">
+        <button type="button" data-f="all" aria-pressed="true">All</button>
+        <button type="button" data-f="live" aria-pressed="false">Live</button>
+        <button type="button" data-f="sp" aria-pressed="false">Sponsored</button>
+      </div>
+      <ul class="list" id="dropList"></ul>
+    </section>
+
+    <section class="screen" id="s-board" hidden>
+      <div class="head"><h2>Winners board</h2><p class="meta">Example hunters for the demo. Your own claims land here as you collect.</p></div>
+      <div class="seg" id="boardSeg">
+        <button type="button" data-m="hunters" aria-pressed="true">Hunters today</button>
+        <button type="button" data-m="campus" aria-pressed="false">Campus league</button>
+      </div>
+      <ol class="list" id="boardList"></ol>
+      <ol class="league" id="leagueList" hidden></ol>
+    </section>
+
+    <section class="screen" id="s-give" hidden>
+      <div class="head"><h2>Give</h2><p class="meta">Free-will donations. Every naira goes to the cause you pick. Figures here are examples.</p></div>
+      <div class="causes" id="causes"></div>
+      <div class="card">
+        <span class="lbl">Amount</span>
+        <div class="chips" id="giveChips">
+          <button class="chip num" type="button" data-a="200" aria-pressed="false">₦200</button>
+          <button class="chip num" type="button" data-a="500" aria-pressed="true">₦500</button>
+          <button class="chip num" type="button" data-a="1000" aria-pressed="false">₦1,000</button>
+          <button class="chip num" type="button" data-a="5000" aria-pressed="false">₦5,000</button>
+        </div>
+        <div class="field"><label for="giveAmt">Or type an amount (₦)</label><input id="giveAmt" type="number" inputmode="numeric" min="100" step="50" value="500"></div>
+        <span class="lbl">Pay from</span>
+        <div class="seg" id="giveSrc">
+          <button type="button" data-s="wallet" aria-pressed="false">Wallet</button>
+          <button type="button" data-s="card" aria-pressed="true">Card or transfer</button>
+        </div>
+        <label class="check"><input id="giveTip" type="checkbox" checked><span>Add a 5% tip to keep KoboHunt running. The tip is separate from your gift.</span></label>
+        <div class="sum"><span>Total</span><b id="giveTotal"></b></div>
+        <p class="err" id="giveErr" hidden></p>
+        <button class="btn primary wide" id="giveBtn" type="button">Donate</button>
+      </div>
+      <label class="check card" style="flex-direction:row"><input id="autoGive" type="checkbox"><span><b>Give as I hunt.</b> Send 10% of every drop I collect to the cause selected above.</span></label>
+    </section>
+
+    <section class="screen" id="s-wallet" hidden>
+      <div class="balance">
+        <div><p class="eyebrow">Wallet balance</p><p class="big" id="wBal">₦0</p></div>
+        <div class="stats">
+          <div><b id="stCol">₦0</b>Collected today</div>
+          <div><b id="stGiv">₦0</b>Given</div>
+          <div><b id="stDrops">0</b>Drops claimed</div>
+        </div>
+      </div>
+      <div class="card" id="wForm">
+        <h3>Withdraw to your bank</h3>
+        <div class="field"><label for="wBank">Bank</label>
+          <select id="wBank"><option value="">Choose a bank</option><option>Access Bank</option><option>First Bank</option><option>GTBank</option><option>UBA</option><option>Zenith Bank</option><option>Fidelity Bank</option><option>Kuda</option><option>OPay</option><option>PalmPay</option><option>Moniepoint</option></select></div>
+        <div class="field"><label for="wAcct">Account number (10 digits)</label><input id="wAcct" type="text" inputmode="numeric" maxlength="10" autocomplete="off" placeholder="0123456789"></div>
+        <div class="field"><label for="wAmt">Amount (₦, minimum 500)</label><input id="wAmt" type="number" inputmode="numeric" min="500" step="100" placeholder="500"></div>
+        <div class="sum"><span>Transfer fee</span><b>₦25</b></div>
+        <p class="err" id="wErr" hidden></p>
+        <button class="btn primary wide" id="wReview" type="button">Review withdrawal</button>
+      </div>
+      <div class="card" id="wConfirm" hidden>
+        <h3>Confirm withdrawal</h3>
+        <div class="sum"><span>To</span><b id="cTo"></b></div>
+        <div class="sum"><span>Leaves your wallet</span><b id="cOut"></b></div>
+        <div class="sum"><span>Arrives in your bank</span><b id="cIn"></b></div>
+        <p class="note">Demo only. No money moves. The live build checks the account name with the payment provider before this step.</p>
+        <button class="btn gold wide" id="wSend" type="button">Send to bank</button>
+        <button class="btn ghost wide" id="wEdit" type="button">Edit details</button>
+      </div>
+      <div class="head"><h3>Activity</h3></div>
+      <ul class="list tx" id="txList"></ul>
+    </section>
+
+    <nav class="tabs" aria-label="Sections">
+      <button class="tab" type="button" data-tab="hunt" aria-current="page"><svg viewBox="0 0 24 24"><path d="M12 21s-6-5.3-6-10a6 6 0 1 1 12 0c0 4.7-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg>Hunt</button>
+      <button class="tab" type="button" data-tab="drops"><svg viewBox="0 0 24 24"><path d="M9 7h11M9 12h11M9 17h11M4.5 7h.01M4.5 12h.01M4.5 17h.01"/></svg>Drops</button>
+      <button class="tab" type="button" data-tab="board"><svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0V4z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 20h6"/></svg>Board</button>
+      <button class="tab" type="button" data-tab="give"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.6A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7 2.4C19 15.6 12 20 12 20z"/></svg>Give</button>
+      <button class="tab" type="button" data-tab="wallet"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18M15.5 14.5h2"/></svg>Wallet</button>
+    </nav>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+    <div class="sheet" id="mission" hidden>
+      <div class="sheet-in" role="dialog" aria-labelledby="misTitle">
+        <p class="eyebrow" id="misBrand"></p>
+        <h2 id="misTitle"></h2>
+        <p class="meta">One answer adds ₦100 to your wallet. The sponsor pays for it.</p>
+        <div class="opts" id="misOpts"></div>
+        <button class="btn ghost wide" id="misSkip" type="button">Skip</button>
+      </div>
+    </div>
+  </main>
+
+  <aside class="founder" id="founder" aria-label="Business model">
+    <div class="f-in">
+      <div class="f-head">
+        <p class="eyebrow">Founder view</p>
+        <h1>How the hunt pays for itself</h1>
+        <p>Ten income lines sit behind one game. Five are already working in the prototype. Play it, then watch the meter below move.</p>
+        <div><button class="btn primary sm only-phone" id="closeModel" type="button">Back to the app</button></div>
+      </div>
+
+      <section class="card meter" aria-label="Revenue from this demo session">
+        <div>
+          <p class="eyebrow">Live from the app</p>
+          <p class="big" id="sesRev">₦0</p>
+          <p class="meta">What the platform earned from your actions in this session, at the rates set below.</p>
+        </div>
+        <dl>
+          <div><dt>Strip views</dt><dd id="mViews">0</dd></div>
+          <div><dt>Sponsored claims</dt><dd id="mSp">0</dd></div>
+          <div><dt>Bonus answers</dt><dd id="mMis">0</dd></div>
+          <div><dt>Donation tips</dt><dd id="mTip">₦0</dd></div>
+        </dl>
+      </section>
+
+      <section class="card" aria-label="Monthly projection">
+        <h2>Monthly projection</h2>
+        <p class="note">Every rate and volume here is a starting assumption for you to replace, not market data. Change any number and the totals follow.</p>
+        <div class="sliders">
+          <label class="slider" for="vHunters"><span>Daily active hunters <output id="oHunters"></output></span><input id="vHunters" type="range" min="500" max="50000" step="500" value="5000"></label>
+          <label class="slider" for="vDrops"><span>Sponsored drops per day <output id="oDrops"></output></span><input id="vDrops" type="range" min="5" max="200" step="5" value="30"></label>
+          <label class="slider" for="vValue"><span>Average sponsored drop <output id="oValue"></output></span><input id="vValue" type="range" min="200" max="5000" step="100" value="1000"></label>
+          <label class="slider" for="vVendors"><span>Campus vendors paying <output id="oVendors"></output></span><input id="vVendors" type="range" min="0" max="100" step="1" value="15"></label>
+          <label class="slider" for="vDays"><span>Takeover days per month <output id="oDays"></output></span><input id="vDays" type="range" min="0" max="8" step="1" value="1"></label>
+        </div>
+        <div class="totals">
+          <div><p class="eyebrow">Platform revenue per month</p><p class="big" id="totRev"></p></div>
+          <div><p class="eyebrow">Sponsor cash reaching students</p><p class="big" id="totCash"></p></div>
+        </div>
+      </section>
+
+      <section aria-label="Income lines">
+        <h2 style="margin-bottom:12px">The ten income lines</h2>
+        <div class="streams" id="streams"></div>
+      </section>
+
+      <section class="card">
+        <h2>Two more for later</h2>
+        <ul class="rules">
+          <li><b>CSR-funded scholarship drops</b><span>A company funds a term of drops as its social programme. You run it for a management fee and send back an impact report.</span></li>
+          <li><b>Footfall reports</b><span>Anonymous, consented counts of which campus spots pull students at which hour, sold to brands planning activations.</span></li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Settle these before launch</h2>
+        <ul class="rules">
+          <li><b>Keep hunting free.</b><span>Selling a head start or a wider radar turns the hunt into a paid prize game, which lottery regulators treat differently. Sell looks, never odds.</span></li>
+          <li><b>Do not hold the money yourself.</b><span>Run wallets and payouts through a licensed payment provider, and verify identity before a first withdrawal.</span></li>
+          <li><b>Plan for fake GPS.</b><span>Location spoofing is the main fraud here. Reject mock locations, check walking speed between claims, and tie one account to one device and one bank account.</span></li>
+          <li><b>Many small drops beat one big one.</b><span>A single large drop sends a crowd to one spot. Spread value across places and times, keep drops off roads, and run them in daylight.</span></li>
+          <li><b>Sell the sponsor strip directly.</b><span>Mainstream ad networks restrict rewarding people for keeping ads on screen. Read their policy before plugging one in.</span></li>
+          <li><b>Pick your own name.</b><span>KoboHunt is a placeholder. The notebook title borrows another company's trademark, and the sponsors shown are invented.</span></li>
+        </ul>
+        <p class="meta">Confirm the legal points with a Nigerian lawyer.</p>
+      </section>
+    </div>
+  </aside>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $=(s,r)=>(r||document).querySelector(s);
+const $$=(s,r)=>Array.prototype.slice.call((r||document).querySelectorAll(s));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const naira=n=>'₦'+Math.round(n).toLocaleString('en-NG');
+const clock=()=>{const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');};
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ================= world (metres; x east, y north; stylised, not to scale) ================= */
+const LAT0=6.8610, LON0=7.4040;
+const coord=d=>(LAT0+d.y/110574).toFixed(5)+'°N  '+(LON0+d.x/110520).toFixed(5)+'°E';
+const RANGE=30, SPEED=38;
+
+const SP={
+  zesta:{name:'Zesta Cola',c:'#d63a2f',ad:'Cold Zesta at the SUB kiosk. ₦1,000 is waiting outside.',q:'Which Zesta would you buy on campus?',a:['Classic','Ginger','Zobo mix']},
+  tuwo:{name:'Tuwo Noodles',c:'#e07b12',ad:'Tuwo Noodles dropped ₦500 by the refectory.',q:'When do you cook noodles most?',a:['Late night','Before lectures','Weekends']},
+  lumo:{name:'Lumo Mobile',c:'#6a3fd1',ad:'Lumo Mobile hid ₦2,000 at the stadium gate.',q:'How much data do you use in a week?',a:['Under 1 GB','1 to 5 GB','Over 5 GB']},
+  ugwu:{name:'Ugwu Pharmacy',c:'#1f9d57',ad:'Ugwu Pharmacy left ₦1,000 near Pharmaceutical Sciences.',q:'Where do you buy medicine now?',a:['On campus','In town','Online']},
+  kwenu:{name:'Kwenu Pay',c:'#0e7fbf',ad:'Kwenu Pay put ₦1,500 at the Main Gate.',q:'What do you pay for most with transfers?',a:['Food','Transport','Printing and data']}
+};
+const DROPS=[
+  {id:1,x:470,y:480,amt:500,place:'Freedom Square'},
+  {id:2,x:205,y:425,amt:1000,place:'Nnamdi Azikiwe Library steps'},
+  {id:3,x:548,y:495,amt:1000,place:'Student Union Building',sp:SP.zesta},
+  {id:4,x:715,y:405,amt:500,place:'Margaret Ekpo Refectory',sp:SP.tuwo},
+  {id:5,x:357,y:530,amt:200,place:'Princess Alexandra Auditorium'},
+  {id:6,x:760,y:190,amt:2000,place:'Akanu Ibiam Stadium gate',sp:SP.lumo},
+  {id:7,x:170,y:330,amt:500,place:'Mary Slessor Hall',by:'Tunde A.',at:'09:51'},
+  {id:8,x:445,y:310,amt:1000,place:'Pharmaceutical Sciences',sp:SP.ugwu},
+  {id:9,x:390,y:630,amt:500,place:"Zik's Flats"},
+  {id:10,x:825,y:500,amt:200,place:'Jackson Building',by:'Amaka N.',at:'09:58'},
+  {id:11,x:300,y:90,amt:1500,place:'Main Gate',sp:SP.kwenu},
+  {id:12,x:545,y:632,amt:300,place:'Chitis'},
+  {id:13,x:555,y:255,amt:500,place:'Akintola Hall'},
+  {id:14,x:760,y:610,amt:1000,place:'Abuja Building'}
+];
+const BLD=[
+  {x:150,y:440,w:110,d:70,h:22,n:'Nnamdi Azikiwe Library'},
+  {x:322,y:545,w:70,d:55,h:18,n:'Princess Alexandra Aud.'},
+  {x:552,y:405,w:75,d:45,h:14,n:'Faculty of Arts'},
+  {x:560,y:470,w:65,d:50,h:12,n:'Student Union'},
+  {x:670,y:420,w:90,d:60,h:10,n:'Margaret Ekpo Refectory'},
+  {x:790,y:430,w:70,d:50,h:16,n:'Jackson Building'},
+  {x:700,y:530,w:120,d:60,h:20,n:'Abuja Building'},
+  {x:140,y:180,w:60,d:130,h:16,n:'Mary Slessor Hall'},
+  {x:220,y:200,w:60,d:120,h:16,n:'Okpara Hall'},
+  {x:330,y:280,w:100,d:60,h:18,n:'Pharmaceutical Sciences'},
+  {x:470,y:290,w:70,d:50,h:10,n:'Medical Centre'},
+  {x:340,y:170,w:130,d:50,h:16,n:'Eni-Njoku Hall'},
+  {x:500,y:180,w:110,d:60,h:16,n:'Akintola Hall'},
+  {x:330,y:640,w:120,d:40,h:14,n:"Zik's Flats"},
+  {x:520,y:645,w:50,d:35,h:8,n:'Chitis'},
+  {x:700,y:640,w:90,d:45,h:14,n:'GS Building'},
+  {x:340,y:80,w:60,d:40,h:10,n:'Bank row'},
+  {x:660,y:75,w:90,d:45,h:8,n:'Hilltop market'},
+  {x:150,y:540,w:60,d:55,h:12},{x:225,y:560,w:50,d:40,h:9},{x:420,y:560,w:90,d:40,h:11},
+  {x:150,y:650,w:110,d:40,h:10},{x:820,y:650,w:50,d:40,h:9},{x:140,y:75,w:110,d:45,h:9},
+  {x:470,y:75,w:120,d:45,h:12},{x:800,y:75,w:70,d:45,h:10},{x:30,y:400,w:60,d:90,h:10},
+  {x:30,y:230,w:60,d:100,h:12},{x:910,y:420,w:60,d:120,h:12},{x:910,y:210,w:60,d:110,h:10}
+];
+const FIELDS=[{x:400,y:420,w:140,d:120},{x:690,y:205,w:150,d:130,track:1}];
+const ROADS=[
+  [40,380,960,380,15],[300,60,300,700,13],[640,60,640,700,13],[120,620,880,620,12],
+  [120,150,880,150,12],[120,150,120,620,11],[880,150,880,620,11],[300,380,640,620,6]
+];
+
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function hit(x,y,m){for(let i=0;i<BLD.length;i++){const b=BLD[i];if(x>b.x-m&&x<b.x+b.w+m&&y>b.y-m&&y<b.y+b.d+m)return b;}return null;}
+function segDist(px,py,a){const dx=a[2]-a[0],dy=a[3]-a[1],l=dx*dx+dy*dy;let t=((px-a[0])*dx+(py-a[1])*dy)/l;t=clamp(t,0,1);return Math.hypot(px-(a[0]+t*dx),py-(a[1]+t*dy));}
+
+const SEGS=[];
+ROADS.forEach(r=>{
+  const L=Math.hypot(r[2]-r[0],r[3]-r[1]),ux=(r[2]-r[0])/L,uy=(r[3]-r[1])/L,ext=r[4]/2,n=Math.ceil((L+ext*2)/28),step=(L+ext*2)/n;
+  for(let i=0;i<n;i++){const a=-ext+i*step-.6,b=-ext+(i+1)*step+.6;SEGS.push({ax:r[0]+ux*a,ay:r[1]+uy*a,bx:r[0]+ux*b,by:r[1]+uy*b,nx:-uy,ny:ux,w:r[4]});}
+});
+const TREES=[];
+(function(){const R=rng(42);let guard=0;while(TREES.length<150&&guard++<4000){const x=20+R()*960,y=30+R()*700;
+  if(hit(x,y,8))continue;
+  if(FIELDS.some(f=>x>f.x-6&&x<f.x+f.w+6&&y>f.y-6&&y<f.y+f.d+6))continue;
+  if(ROADS.some(r=>segDist(x,y,r)<r[4]/2+7))continue;
+  TREES.push({x:x,y:y,s:.8+R()*.5});}})();
+
+/* ================= state ================= */
+const S={bal:0,sel:null,tab:'hunt',walk:null,filter:'all',boardMode:'hunters',autoGive:false,cause:'fees',giveAmt:500,giveSrc:'card',collected:0,given:0,mine:0,pend:null};
+const me={x:330,y:400,hd:0,moving:false};
+const TX=[];
+const M={views:0,sp:0,spValue:0,mis:0,tips:0};
+const BOARD=[
+  {n:'Amaka N.',f:'Law',t:1700,c:3},{n:'Tunde A.',f:'Engineering',t:1200,c:2},{n:'Ibrahim S.',f:'Agriculture',t:900,c:2},
+  {n:'Ngozi E.',f:'Pharmacy',t:700,c:2},{n:'Chidera O.',f:'Arts',t:500,c:1},{n:'Zainab M.',f:'Veterinary Medicine',t:300,c:1},
+  {n:'You',f:'Your claims today',t:0,c:0,me:1}
+];
+const LEAGUE=[['UNN Nsukka',412000],['UNILAG',388000],['UI Ibadan',301000],['ABU Zaria',276000],['OAU Ile-Ife',244000],['FUTO Owerri',190000],['UNIBEN',151000],['ESUT Enugu',98000]];
+const CAUSES=[
+  {id:'fees',n:'School fees relief',d:'Clears outstanding fees for students about to miss their exams.',r:412500,g:1000000},
+  {id:'meals',n:'Meal tickets',d:'One hot meal a day at the refectory for students who cannot afford it.',r:96000,g:300000},
+  {id:'pool',n:"Tomorrow's drop pool",d:'Funds the free drops hidden on campus each morning.',r:58200,g:150000}
+];
+const NPC=[{n:'Ibrahim S.',x:820,y:300,sp:4.6},{n:'Ngozi E.',x:180,y:640,sp:3.9},{n:'Chidera O.',x:600,y:120,sp:5.2}];
+const live=()=>DROPS.filter(d=>!d.by);
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function nearestLive(){let best=null,bd=1e9;live().forEach(d=>{const k=dist(me,d);if(k<bd){bd=k;best=d;}});return best;}
+
+/* ================= movement ================= */
+function pick(p,t,a,b){const ca=Math.abs(p-a)+Math.abs(t-a),cb=Math.abs(p-b)+Math.abs(t-b);if(Math.abs(ca-cb)<.5)return Math.abs(p-a)>Math.abs(p-b)?a:b;return ca<cb?a:b;}
+function stepTo(e,tx,ty,d){
+  const dx=tx-e.x,dy=ty-e.y,L=Math.hypot(dx,dy);
+  if(L<=d||L<.5){e.x=tx;e.y=ty;return true;}
+  const ux=dx/L,uy=dy/L,nx=e.x+ux*d,ny=e.y+uy*d,b=hit(nx,ny,3);
+  if(!b){e.x=nx;e.y=ny;e.hd=Math.atan2(ux,uy);return false;}
+  if(e.x<=b.x-3||e.x>=b.x+b.w+3){
+    const c=pick(e.y,ty,b.y-4,b.y+b.d+4),m=Math.min(d,Math.abs(c-e.y)),sg=Math.sign(c-e.y);
+    e.y+=sg*m;e.hd=sg>=0?0:Math.PI;if(m<1e-3)e.x+=(ux>=0?1:-1)*d;
+  }else{
+    const c=pick(e.x,tx,b.x-4,b.x+b.w+4),m=Math.min(d,Math.abs(c-e.x)),sg=Math.sign(c-e.x);
+    e.x+=sg*m;e.hd=sg>=0?Math.PI/2:-Math.PI/2;if(m<1e-3)e.y+=(uy>=0?1:-1)*d;
+  }
+  return false;
+}
+function snapOut(p){const b=hit(p.x,p.y,5);if(!b)return p;
+  const o=[[p.x-(b.x-6),'l'],[(b.x+b.w+6)-p.x,'r'],[p.y-(b.y-6),'d'],[(b.y+b.d+6)-p.y,'u']].sort((a,c)=>a[0]-c[0])[0][1];
+  if(o==='l')p.x=b.x-6;else if(o==='r')p.x=b.x+b.w+6;else if(o==='d')p.y=b.y-6;else p.y=b.y+b.d+6;return p;}
+
+/* ================= camera & projection ================= */
+const cv=$('#map'),ctx=cv.getContext('2d');
+const cam={th:.42,D:230,phi:27*Math.PI/180};
+cam.H=cam.D*Math.tan(cam.phi);
+const CP=Math.cos(cam.phi),SPh=Math.sin(cam.phi);
+let W=300,Hc=400,F=340,AY=220,dpr=1,cs=1,sn=0;
+function resize(){
+  const r=cv.parentElement.getBoundingClientRect();
+  if(r.width<10||r.height<10)return;
+  W=r.width;Hc=r.height;dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=Math.round(W*dpr);cv.height=Math.round(Hc*dpr);F=Hc*.85;AY=Hc*.54;
+}
+function proj(wx,wy,h){
+  const dx=wx-me.x,dy=wy-me.y,X=dx*cs-dy*sn,Z=dx*sn+dy*cs,zd=Z+cam.D,hh=(h||0)-cam.H;
+  const cz=zd*CP-hh*SPh;if(cz<40)return null;
+  const k=F/cz;return{x:W/2+X*k,y:AY-(zd*SPh+hh*CP)*k,k:k};
+}
+function unproj(sx,sy){
+  const a=(sx-W/2)/F,b=(AY-sy)/F,den=SPh-b*CP;if(den<=.03)return null;
+  const zd=cam.H*(CP+b*SPh)/den,cz=zd*CP+cam.H*SPh,X=a*cz,Z=zd-cam.D;
+  return{x:me.x+X*cs+Z*sn,y:me.y-X*sn+Z*cs};
+}
+const zOf=(x,y)=>(x-me.x)*sn+(y-me.y)*cs;
+
+const T={};
+function readTokens(){
+  const g=getComputedStyle(document.documentElement),v=n=>g.getPropertyValue(n).trim();
+  ['sky1','sky2','ground','field','road','road-edge','roof','wall','wall2','window','tree','tree2','shadow','label','halo','claimed'].forEach(k=>{T[k]=v('--m-'+k);});
+  T.coin=v('--coin');T.onCoin=v('--on-coin');T.coinText=v('--coin-text');T.indigo=v('--indigo');T.laterite=v('--laterite');T.onIndigo=v('--on-indigo');
+}
+const FB='"Hanken Grotesk",system-ui,sans-serif';
+
+/* ================= drawing ================= */
+function path(p){ctx.beginPath();ctx.moveTo(p[0].x,p[0].y);for(let i=1;i<p.length;i++)ctx.lineTo(p[i].x,p[i].y);ctx.closePath();}
+function off(p){let l=1,r=1,b=1,t=1;for(let i=0;i<p.length;i++){if(p[i].x>-40)l=0;if(p[i].x<W+40)r=0;if(p[i].y<Hc+40)b=0;if(p[i].y>-40)t=0;}return l||r||b||t;}
+function quad(pts,h,fill){const p=[];for(let i=0;i<4;i++){const q=proj(pts[i][0],pts[i][1],h);if(!q)return;p.push(q);}if(off(p))return;path(p);ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=fill;ctx.lineWidth=1;ctx.stroke();}
+function ell(x,y,rx,ry,fill){ctx.beginPath();ctx.ellipse(x,y,Math.max(.5,rx),Math.max(.5,ry),0,0,6.2832);ctx.fillStyle=fill;ctx.fill();}
+function label(txt,x,y,size,bold){ctx.font=(bold?'700 ':'600 ')+size+'px '+FB;ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';ctx.lineWidth=3.5;ctx.strokeStyle=T.halo;ctx.strokeText(txt,x,y);ctx.fillStyle=T.label;ctx.fillText(txt,x,y);}
+function rectPts(x,y,w,d){return[[x,y],[x+w,y],[x+w,y+d],[x,y+d]];}
+
+function drawRoads(){
+  for(let pass=0;pass<2;pass++){const col=pass?T.road:T['road-edge'];
+    for(let i=0;i<SEGS.length;i++){const s=SEGS[i],w=s.w/2+(pass?0:1.6);
+      quad([[s.ax+s.nx*w,s.ay+s.ny*w],[s.bx+s.nx*w,s.by+s.ny*w],[s.bx-s.nx*w,s.by-s.ny*w],[s.ax-s.nx*w,s.ay-s.ny*w]],0,col);}}
+}
+const NRM=[[0,-1],[1,0],[0,1],[-1,0]];
+function drawBuilding(b,camX,camY){
+  const base=rectPts(b.x,b.y,b.w,b.d),P0=[],P1=[];
+  for(let i=0;i<4;i++){const a=proj(base[i][0],base[i][1],0),c=proj(base[i][0],base[i][1],b.h);if(!a||!c)return;P0.push(a);P1.push(c);}
+  if(off(P0.concat(P1)))return;
+  for(let i=0;i<4;i++){const j=(i+1)%4,mx=(base[i][0]+base[j][0])/2,my=(base[i][1]+base[j][1])/2;
+    if((camX-mx)*NRM[i][0]+(camY-my)*NRM[i][1]<=0)continue;
+    path([P0[i],P0[j],P1[j],P1[i]]);ctx.fillStyle=i%2?T.wall2:T.wall;ctx.fill();
+    const len=Math.hypot(base[j][0]-base[i][0],base[j][1]-base[i][1]),t0=3/len,t1=1-3/len,
+      ex0=base[i][0]+(base[j][0]-base[i][0])*t0,ey0=base[i][1]+(base[j][1]-base[i][1])*t0,
+      ex1=base[i][0]+(base[j][0]-base[i][0])*t1,ey1=base[i][1]+(base[j][1]-base[i][1])*t1;
+    ctx.globalAlpha=.7;ctx.fillStyle=T.window;
+    for(let f=0;f*4.6+3.6<b.h;f++){const ha=f*4.6+1.8,q=[proj(ex0,ey0,ha),proj(ex1,ey1,ha),proj(ex1,ey1,ha+1.7),proj(ex0,ey0,ha+1.7)];if(q[0]&&q[1]&&q[2]&&q[3]){path(q);ctx.fill();}}
+    ctx.globalAlpha=1;
+  }
+  path(P1);ctx.fillStyle=T.roof;ctx.fill();ctx.strokeStyle=T.wall2;ctx.lineWidth=1;ctx.stroke();
+}
+function drawTree(t){const p=proj(t.x,t.y,0),q=proj(t.x,t.y,7*t.s);if(!p||!q||p.x<-30||p.x>W+30||p.y>Hc+40)return;
+  const r=5.2*t.s*p.k;ell(p.x+r*.35,p.y,r,r*.42,T.shadow);ell(q.x,q.y,r,r,T.tree2);ell(q.x-r*.22,q.y-r*.25,r*.62,r*.62,T.tree);}
+function pawn(x,y,s,col,bob){
+  ell(x,y,s*.75,s*.3,T.shadow);y-=bob;
+  ctx.beginPath();ctx.moveTo(x-s*.58,y);ctx.quadraticCurveTo(x-s*.62,y-s*1.5,x,y-s*1.62);ctx.quadraticCurveTo(x+s*.62,y-s*1.5,x+s*.58,y);ctx.closePath();
+  ctx.fillStyle=col;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=T.halo;ctx.stroke();
+  ctx.beginPath();ctx.arc(x,y-s*2.05,s*.5,0,6.2832);ctx.fillStyle=col;ctx.fill();ctx.stroke();
+}
+function drawDrop(d,t){
+  const p=proj(d.x,d.y,0);d.sx=null;if(!p||p.x<-40||p.x>W+40||p.y>Hc+70)return;
+  const r=clamp(8.5*p.k,6,20);
+  if(d.by){ctx.globalAlpha=.85;ell(p.x,p.y,r*1.15,r*.5,T.claimed);ctx.globalAlpha=1;
+    ctx.strokeStyle=T.halo;ctx.lineWidth=Math.max(1.5,r*.14);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(p.x-r*.4,p.y);ctx.lineTo(p.x-r*.1,p.y+r*.16);ctx.lineTo(p.x+r*.42,p.y-r*.2);ctx.stroke();return;}
+  const sel=d===S.sel,bob=RM?0:Math.sin(t*2.4+d.id)*r*.2,cy=p.y-r*2.3-bob;
+  ctx.globalAlpha=.4;ell(p.x,p.y,r*1.5,r*.62,T.coin);ctx.globalAlpha=1;
+  if(sel){const g=ctx.createLinearGradient(0,cy-r*8,0,cy);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(1,T.coin);ctx.globalAlpha=.5;ctx.fillStyle=g;ctx.fillRect(p.x-r*.7,cy-r*8,r*1.4,r*8);ctx.globalAlpha=1;}
+  ctx.strokeStyle=T.coinText;ctx.lineWidth=Math.max(1.5,r*.14);ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x,cy+r);ctx.stroke();
+  ctx.beginPath();ctx.arc(p.x,cy,r,0,6.2832);ctx.fillStyle=T.coin;ctx.fill();
+  ctx.lineWidth=Math.max(2,r*.2);ctx.strokeStyle=d.sp?d.sp.c:T.coinText;ctx.stroke();
+  ctx.fillStyle=T.onCoin;ctx.font='800 '+Math.round(r*1.15)+'px '+FB;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('₦',p.x,cy+r*.06);
+  if(sel||p.k>1.35)label(naira(d.amt),p.x,cy-r-10,sel?13:11,true);
+  d.sx=p.x;d.sy=cy;d.sr=r;
+}
+const parts=[];
+function burst(x,y){for(let i=0;i<28;i++){const a=Math.random()*6.2832,v=90+Math.random()*190;parts.push({x:x,y:y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-140,l:1});}}
+
+function draw(t,dt){
+  cs=Math.cos(cam.th);sn=Math.sin(cam.th);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const hy=AY-F*Math.tan(cam.phi);
+  const g=ctx.createLinearGradient(0,0,0,hy+2);g.addColorStop(0,T.sky1);g.addColorStop(1,T.sky2);
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,hy+2);
+  ctx.fillStyle=T.ground;ctx.fillRect(0,hy,W,Hc-hy);
+  FIELDS.forEach(f=>{if(f.track)quad(rectPts(f.x-10,f.y-10,f.w+20,f.d+20),0,T['road-edge']);quad(rectPts(f.x,f.y,f.w,f.d),0,T.field);});
+  drawRoads();
+  /* ground decals: reach ring and route */
+  const ring=[];for(let i=0;i<40;i++){const a=i/40*6.2832,q=proj(me.x+Math.cos(a)*RANGE,me.y+Math.sin(a)*RANGE,0);if(q)ring.push(q);}
+  if(ring.length>3){path(ring);ctx.globalAlpha=.16;ctx.fillStyle=T.indigo;ctx.fill();ctx.globalAlpha=.75;ctx.strokeStyle=T.indigo;ctx.lineWidth=2;ctx.stroke();ctx.globalAlpha=1;}
+  if(S.sel&&!S.sel.by){const L=dist(me,S.sel),ux=(S.sel.x-me.x)/L,uy=(S.sel.y-me.y)/L,o=RM?0:(t*16)%12;
+    ctx.globalAlpha=.9;for(let s=RANGE*.4+o;s<L-6;s+=12){const q=proj(me.x+ux*s,me.y+uy*s,0);if(q)ell(q.x,q.y,2.6*q.k,1.3*q.k,T.coin);}ctx.globalAlpha=1;}
+  /* distance haze */
+  const band=Hc*.022;ctx.fillStyle=T.sky2;for(let i=0;i<8;i++){ctx.globalAlpha=.62*(1-i/8);ctx.fillRect(0,hy+i*band,W,band+1);}ctx.globalAlpha=1;
+  /* depth-sorted objects */
+  const camX=me.x-cam.D*sn,camY=me.y-cam.D*cs,obj=[];
+  BLD.forEach(b=>obj.push({z:zOf(b.x+b.w/2,b.y+b.d/2),k:0,o:b}));
+  TREES.forEach(o=>obj.push({z:zOf(o.x,o.y),k:1,o:o}));
+  DROPS.forEach(o=>obj.push({z:zOf(o.x,o.y),k:2,o:o}));
+  NPC.forEach(o=>obj.push({z:zOf(o.x,o.y),k:3,o:o}));
+  obj.push({z:0,k:4});
+  obj.sort((a,b)=>b.z-a.z);
+  for(let i=0;i<obj.length;i++){const e=obj[i];
+    if(e.k===0)drawBuilding(e.o,camX,camY);
+    else if(e.k===1)drawTree(e.o);
+    else if(e.k===2)drawDrop(e.o,t);
+    else if(e.k===3){const p=proj(e.o.x,e.o.y,0);if(p&&p.y<Hc+40){const s=clamp(p.k*7,5,14);pawn(p.x,p.y,s,T.laterite,RM?0:Math.abs(Math.sin(t*7+e.o.sp))*s*.12);if(p.k>1.2)label(e.o.n,p.x,p.y-s*3.1,10,false);}}
+    else{const p=proj(me.x,me.y,0),s=clamp(p.k*9,12,22);
+      const hx=Math.sin(me.hd),hyy=Math.cos(me.hd),a=proj(me.x+hx*21,me.y+hyy*21,0),b1=proj(me.x+hx*12-hyy*6,me.y+hyy*12+hx*6,0),b2=proj(me.x+hx*12+hyy*6,me.y+hyy*12-hx*6,0);
+      if(a&&b1&&b2){path([a,b1,b2]);ctx.fillStyle=T.indigo;ctx.globalAlpha=.85;ctx.fill();ctx.globalAlpha=1;}
+      pawn(p.x,p.y,s,T.indigo,(me.moving&&!RM)?Math.abs(Math.sin(t*11))*s*.16:0);}
+  }
+  if(S.sel&&!S.sel.by&&S.sel.sx!=null){ctx.globalAlpha=.35;drawDrop(S.sel,t);ctx.globalAlpha=1;}
+  /* landmark names, nearest first, skipping overlaps */
+  const placed=[];
+  BLD.filter(b=>b.n).map(b=>({b:b,p:proj(b.x+b.w/2,b.y+b.d/2,b.h+5)})).filter(e=>e.p&&e.p.k>1.2&&e.p.y>hy+90&&e.p.y<Hc-175).sort((a,b)=>b.p.k-a.p.k).forEach(e=>{
+    ctx.font='600 11px '+FB;const w=ctx.measureText(e.b.n).width/2+5,x=e.p.x;
+    if(x<w+4||x>W-w-52)return;
+    if(placed.some(q=>Math.abs(q.x-x)<q.w+w+6&&Math.abs(q.y-e.p.y)<20))return;
+    placed.push({x:x,y:e.p.y,w:w});label(e.b.n,x,e.p.y,11,false);});
+  for(let i=parts.length-1;i>=0;i--){const q=parts[i];q.vy+=520*dt;q.x+=q.vx*dt;q.y+=q.vy*dt;q.l-=dt*1.1;if(q.l<=0){parts.splice(i,1);continue;}ctx.globalAlpha=q.l;ell(q.x,q.y,4,4,T.coin);}
+  ctx.globalAlpha=1;
+}
+
+/* ================= UI helpers ================= */
+let toastT=0;
+function toast(msg){const el=$('#toast');el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{el.hidden=true;},2800);}
+function go(tab){
+  S.tab=tab;['hunt','drops','board','give','wallet'].forEach(n=>{$('#s-'+n).hidden=n!==tab;});
+  $$('.tab').forEach(b=>{if(b.dataset.tab===tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+  if(tab==='hunt')resize();if(tab==='drops')renderDrops();if(tab==='board')renderBoard();if(tab==='wallet')renderWallet();if(tab==='give')renderGive();
+}
+function setSeg(root,attr,val){$$('button',root).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset[attr]===String(val))));}
+
+function select(d){
+  S.sel=d;resetSwipe();
+  const has=!!d;$('#hDone').hidden=has;$('.hud-main').hidden=!has;
+  if(!has){$('#hFar').hidden=true;$('#hNear').hidden=true;return;}
+  $('#hAmt').textContent=naira(d.amt);$('#hPlace').textContent=d.place;$('#hCoord').textContent=coord(d);
+  const tag=$('#hTag');tag.textContent=d.sp?d.sp.name:'Charity pool';tag.className='tag'+(d.sp?' sp':'');
+  $('#swipeLabel').textContent='Swipe to collect '+naira(d.amt);
+  updateHud();if(S.tab==='drops')renderDrops();
+}
+function updateHud(){
+  const d=S.sel;if(!d)return;
+  const L=dist(me,d),near=L<=RANGE;
+  $('#hDist').textContent=near?'Here':Math.round(L);$('#hUnit').textContent=near?'in reach':'m away';
+  const dx=d.x-me.x,dy=d.y-me.y,X=dx*cs-dy*sn,Z=dx*sn+dy*cs;
+  $('#needle').setAttribute('transform','rotate('+(Math.atan2(X,Z)*180/Math.PI).toFixed(1)+' 20 20)');
+  if($('#hNear').hidden===near){$('#hNear').hidden=!near;$('#hFar').hidden=near;$('#swipe').classList.toggle('ready',near);}
+}
+
+/* swipe to collect */
+const thumb=$('#thumb'),swipe=$('#swipe');let drag=null;
+function setSwipe(x,max){thumb.style.transform='translateX('+x+'px)';swipe.style.setProperty('--p',max?((x+53)/(max+58)).toFixed(3):0);}
+function resetSwipe(){thumb.classList.add('back');setSwipe(0,0);drag=null;}
+thumb.addEventListener('pointerdown',e=>{thumb.setPointerCapture(e.pointerId);thumb.classList.remove('back');swipe.classList.remove('ready');drag={x0:e.clientX,max:swipe.clientWidth-58,x:0};});
+thumb.addEventListener('pointermove',e=>{if(!drag)return;drag.x=clamp(e.clientX-drag.x0,0,drag.max);setSwipe(drag.x,drag.max);});
+function endDrag(){if(!drag)return;const ok=drag.x>drag.max*.82;if(ok){setSwipe(drag.max,drag.max);drag=null;collect();}else{resetSwipe();swipe.classList.add('ready');}}
+thumb.addEventListener('pointerup',endDrag);thumb.addEventListener('pointercancel',endDrag);
+thumb.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '||e.key==='ArrowRight'){e.preventDefault();collect();}});
+
+function credit(n){S.bal+=n;const p=$('#balPill');p.classList.remove('bump');void p.offsetWidth;p.classList.add('bump');}
+function addBoard(name,amt){let r=BOARD.find(b=>b.n===name);if(!r){r={n:name,f:'Hunter',t:0,c:0};BOARD.push(r);}r.t+=amt;r.c++;}
+function collect(){
+  const d=S.sel;if(!d||d.by||dist(me,d)>RANGE+1)return;
+  d.by='You';d.at=clock();S.walk=null;S.collected+=d.amt;S.mine++;credit(d.amt);addBoard('You',d.amt);
+  TX.unshift({l:'Collected at '+d.place,s:d.sp?'Sponsored by '+d.sp.name:'Charity pool',a:d.amt});
+  if(d.sx!=null)burst(d.sx,d.sy);
+  if(d.sp){M.sp++;M.spValue+=d.amt;}
+  let msg=naira(d.amt)+' is in your wallet';
+  if(S.autoGive){const c=CAUSES.find(c=>c.id===S.cause),g=Math.round(d.amt*.1);S.bal-=g;S.given+=g;c.r+=g;TX.unshift({l:'Gave to '+c.n,s:'10% of your drop',a:-g});msg+='. '+naira(g)+' went to '+c.n;}
+  toast(msg);refresh();
+  if(d.sp){S.pend=d;setTimeout(()=>openMission(d),900);}
+  setTimeout(()=>{if(S.sel===d)select(nearestLive());},1000);
+}
+function npcClaim(n,d){d.by=n.n;d.at=clock();addBoard(n.n,d.amt);toast(n.n+' claimed '+naira(d.amt)+' at '+d.place);if(S.sel===d){S.walk=null;select(nearestLive());}refresh();}
+
+function openMission(d){
+  $('#misBrand').textContent='Bonus from '+d.sp.name;$('#misTitle').textContent=d.sp.q;
+  $('#misOpts').innerHTML=d.sp.a.map(a=>'<button class="btn" type="button">'+a+'</button>').join('');
+  $('#mission').hidden=false;const first=$('#misOpts button');if(first)first.focus();
+}
+$('#misOpts').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!S.pend)return;
+  credit(100);S.collected+=100;M.mis++;TX.unshift({l:'Bonus answer',s:'Paid by '+S.pend.sp.name,a:100});S.pend=null;$('#mission').hidden=true;toast('Bonus ₦100 added');refresh();});
+$('#misSkip').addEventListener('click',()=>{S.pend=null;$('#mission').hidden=true;});
+
+/* ================= screens ================= */
+function renderDrops(){
+  const lv=live();$('#dropSum').textContent=lv.length+' of '+DROPS.length+' still live, worth '+naira(lv.reduce((a,d)=>a+d.amt,0))+'. Claimed drops grey out.';
+  let rows=DROPS.slice();if(S.filter==='live')rows=rows.filter(d=>!d.by);if(S.filter==='sp')rows=rows.filter(d=>d.sp);
+  rows.sort((a,b)=>(!!a.by-!!b.by)||dist(me,a)-dist(me,b));
+  $('#dropList').innerHTML=rows.map(d=>'<li><button type="button" class="row'+(d.by?' claimed':'')+(d===S.sel?' on':'')+'" data-id="'+d.id+'"'+(d.by?' disabled':'')+'>'+
+    '<span class="coin" style="--b:'+(d.sp?d.sp.c:'transparent')+'">₦</span>'+
+    '<span class="row-main"><strong>'+naira(d.amt)+' · '+d.place+'</strong><span class="meta">'+(d.sp?'Sponsored by '+d.sp.name:'Charity pool')+'</span><span class="mono">'+coord(d)+'</span></span>'+
+    '<span class="row-end">'+(d.by?'<em>Claimed</em><span>'+d.by+' · '+d.at+'</span>':'<strong>'+Math.round(dist(me,d))+' m</strong><span>'+(d===S.sel?'targeted':'away')+'</span>')+'</span></button></li>').join('')||'<li class="note">No drops match this filter.</li>';
+}
+$('#dropList').addEventListener('click',e=>{const b=e.target.closest('.row');if(!b||b.disabled)return;const d=DROPS.find(x=>x.id===+b.dataset.id);select(d);go('hunt');toast('Targeting '+d.place);});
+$('#dropSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.filter=b.dataset.f;setSeg($('#dropSeg'),'f',S.filter);renderDrops();});
+
+function renderBoard(){
+  const hunters=S.boardMode==='hunters';$('#boardList').hidden=!hunters;$('#leagueList').hidden=hunters;
+  if(hunters){$('#boardList').innerHTML=BOARD.slice().sort((a,b)=>b.t-a.t).map((r,i)=>'<li class="row'+(r.me?' me':'')+'"><span class="rank">'+(i+1)+'</span><span class="row-main"><strong>'+r.n+'</strong><span class="meta">'+r.f+'</span></span><span class="row-end"><strong>'+naira(r.t)+'</strong><span>'+r.c+(r.c===1?' drop':' drops')+'</span></span></li>').join('');}
+  else{const mx=LEAGUE[0][1];$('#leagueList').innerHTML='<li class="meta" style="display:block">Cash given out this week. Example figures.</li>'+LEAGUE.map(l=>'<li><b>'+l[0]+'</b><span class="num">'+naira(l[1])+'</span><span class="track"><i style="--w:'+(l[1]/mx*100).toFixed(1)+'%"></i></span></li>').join('');}
+}
+$('#boardSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.boardMode=b.dataset.m;setSeg($('#boardSeg'),'m',S.boardMode);renderBoard();});
+
+function renderGive(){
+  $('#causes').innerHTML=CAUSES.map(c=>'<button type="button" class="cause" data-id="'+c.id+'" aria-pressed="'+(c.id===S.cause)+'"><strong>'+c.n+'</strong><span class="amt">'+naira(c.r)+' of '+naira(c.g)+'</span><span class="meta">'+c.d+'</span><span class="track gold"><i style="--w:'+Math.min(100,c.r/c.g*100).toFixed(1)+'%"></i></span></button>').join('');
+  const a=S.giveAmt||0,tip=$('#giveTip').checked?Math.round(a*.05):0;$('#giveTotal').textContent=naira(a+tip)+(tip?' (includes '+naira(tip)+' tip)':'');
+}
+$('#causes').addEventListener('click',e=>{const b=e.target.closest('.cause');if(!b)return;S.cause=b.dataset.id;renderGive();});
+$('#giveChips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;S.giveAmt=+b.dataset.a;$('#giveAmt').value=S.giveAmt;setSeg($('#giveChips'),'a',S.giveAmt);renderGive();});
+$('#giveAmt').addEventListener('input',e=>{S.giveAmt=Math.max(0,Math.floor(+e.target.value||0));setSeg($('#giveChips'),'a',S.giveAmt);renderGive();});
+$('#giveSrc').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.giveSrc=b.dataset.s;setSeg($('#giveSrc'),'s',S.giveSrc);});
+$('#giveTip').addEventListener('change',renderGive);
+$('#autoGive').addEventListener('change',e=>{S.autoGive=e.target.checked;toast(S.autoGive?'10% of each drop will go to your cause':'Give as I hunt is off');});
+$('#giveBtn').addEventListener('click',()=>{
+  const err=$('#giveErr'),a=S.giveAmt,tip=$('#giveTip').checked?Math.round(a*.05):0,c=CAUSES.find(c=>c.id===S.cause);
+  const fail=m=>{err.textContent=m;err.hidden=false;};
+  if(!a||a<100)return fail('Enter at least ₦100.');
+  if(S.giveSrc==='wallet'&&a+tip>S.bal)return fail('Your wallet holds '+naira(S.bal)+'. Collect a drop first, or pay by card or transfer.');
+  err.hidden=true;if(S.giveSrc==='wallet')S.bal-=a+tip;
+  c.r+=a;S.given+=a;M.tips+=tip;TX.unshift({l:'Gave to '+c.n,s:S.giveSrc==='wallet'?'From wallet':'Card or transfer (demo)',a:S.giveSrc==='wallet'?-(a+tip):0,note:S.giveSrc==='wallet'?'':naira(a)});
+  toast(naira(a)+' given to '+c.n);refresh();
+});
+
+function renderWallet(){
+  $('#wBal').textContent=naira(S.bal);$('#stCol').textContent=naira(S.collected);$('#stGiv').textContent=naira(S.given);$('#stDrops').textContent=S.mine;
+  $('#txList').innerHTML=TX.length?TX.map(t=>'<li class="row"><span class="row-main"><strong>'+t.l+'</strong><span class="meta">'+t.s+'</span></span><span class="row-end"><strong class="'+(t.a>0?'in':'')+'">'+(t.a>0?'+'+naira(t.a):t.a<0?'−'+naira(-t.a):t.note||'')+'</strong></span></li>').join(''):'<li class="note" style="margin-top:12px">Nothing yet. Walk to a coin on the Hunt tab and swipe to collect it.</li>';
+}
+let wd=null;
+$('#wAcct').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,10);});
+$('#wReview').addEventListener('click',()=>{
+  const err=$('#wErr'),bank=$('#wBank').value,acct=$('#wAcct').value,amt=Math.floor(+$('#wAmt').value||0);
+  const fail=m=>{err.textContent=m;err.hidden=false;};
+  if(!bank)return fail('Choose your bank.');
+  if(!/^\d{10}$/.test(acct))return fail('Account numbers are 10 digits.');
+  if(amt<500)return fail('The minimum withdrawal is ₦500.');
+  if(amt>S.bal)return fail('Your wallet holds '+naira(S.bal)+'. Enter that or less.');
+  err.hidden=true;wd={bank:bank,acct:acct,amt:amt};
+  $('#cTo').textContent=bank+' ••••'+acct.slice(-4);$('#cOut').textContent=naira(amt);$('#cIn').textContent=naira(amt-25);
+  $('#wForm').hidden=true;$('#wConfirm').hidden=false;$('#wSend').focus();
+});
+$('#wEdit').addEventListener('click',()=>{$('#wConfirm').hidden=true;$('#wForm').hidden=false;});
+$('#wSend').addEventListener('click',()=>{if(!wd||wd.amt>S.bal)return;S.bal-=wd.amt;
+  TX.unshift({l:'Withdrawal to '+wd.bank+' ••••'+wd.acct.slice(-4),s:'Processing (demo, no money moves)',a:-wd.amt});
+  toast(naira(wd.amt-25)+' is on its way to '+wd.bank);wd=null;$('#wAmt').value='';$('#wConfirm').hidden=true;$('#wForm').hidden=false;refresh();});
+
+/* ================= founder model ================= */
+const STREAMS=[
+  {id:'fee',n:'Sponsored drop fee',u:'% of drop value',r:20,d:'A brand funds a drop at its own location and pays a service fee on top.',tab:'hunt',see:'See the branded coins',f:(v,r)=>v.drops*v.value*30*r/100},
+  {id:'ads',n:'Hunt-screen sponsor strip',u:'₦ per 1,000 views',r:800,d:'The strip above the map rotates while people hunt. Assumes 10 views per hunter per day.',tab:'hunt',see:'See the strip',f:(v,r)=>v.hunters*10*30/1000*r},
+  {id:'visit',n:'Verified visit fee',u:'₦ per visit',r:40,d:'GPS proves a student stood at the brand\'s door. Assumes 20 hunters reach each sponsored drop.',tab:'drops',see:'See sponsored drops',f:(v,r)=>v.drops*20*30*r},
+  {id:'mission',n:'Bonus answers',u:'₦ per answer',r:60,d:'One sponsor question after a sponsored claim. Assumes 35% of visitors answer.',tab:'hunt',see:'Claim a sponsored coin',f:(v,r)=>v.drops*20*30*.35*r},
+  {id:'tips',n:'Donation tips',u:'% tip',r:5,d:'An optional tip on top of a gift, so donations reach causes whole. Assumes ₦40 donated per hunter monthly and half opting in.',tab:'give',see:'See the Give portal',f:(v,r)=>v.hunters*40*.5*r/100},
+  {id:'cpa',n:'Account-opening bounties',u:'₦ per signup',r:500,d:'Banks and fintechs pay for each student account opened. Assumes 2% of hunters a month.',f:(v,r)=>v.hunters*.02*r},
+  {id:'vendor',n:'Campus vendor pins',u:'₦ per week',r:5000,d:'Canteens, print shops and salons pay to appear on the map.',f:(v,r)=>v.vendors*r*4},
+  {id:'takeover',n:'Takeover days',u:'₦ per day',r:400000,d:'One brand owns every drop and the strip for a day, such as freshers\' week.',f:(v,r)=>v.days*r},
+  {id:'skins',n:'Avatar skins and trails',u:'₦ per month',r:300,d:'Cosmetic only, with no effect on who wins. Assumes 1.5% of hunters buy.',f:(v,r)=>v.hunters*.015*r},
+  {id:'airtime',n:'Airtime and data cash-out',u:'% margin',r:2.5,d:'Winners spend their balance on airtime at your reseller margin. Assumes a quarter of sponsor cash goes this way.',f:(v,r)=>v.drops*v.value*30*.25*r/100}
+];
+function vals(){return{hunters:+$('#vHunters').value,drops:+$('#vDrops').value,value:+$('#vValue').value,vendors:+$('#vVendors').value,days:+$('#vDays').value};}
+const rate=id=>Math.max(0,+$('#rate-'+id).value||0);
+$('#streams').innerHTML=STREAMS.map(s=>'<div class="stream"><div><h3>'+s.n+' <span class="tag'+(s.tab?'':' next')+'">'+(s.tab?'In this prototype':'Next')+'</span></h3><p class="meta">'+s.d+'</p></div><div class="s-val" id="val-'+s.id+'"></div>'+
+  '<div class="s-ctl"><label class="rate" for="rate-'+s.id+'"><input id="rate-'+s.id+'" type="number" inputmode="decimal" min="0" step="any" value="'+s.r+'">'+s.u+'</label>'+(s.tab?'<button type="button" class="linkbtn" data-go="'+s.tab+'">'+s.see+'</button>':'')+'</div>'+
+  '<span class="track"><i id="bar-'+s.id+'"></i></span></div>').join('');
+function calc(){
+  const v=vals();$('#oHunters').textContent=v.hunters.toLocaleString('en-NG');$('#oDrops').textContent=v.drops;$('#oValue').textContent=naira(v.value);$('#oVendors').textContent=v.vendors;$('#oDays').textContent=v.days;
+  const out=STREAMS.map(s=>s.f(v,rate(s.id))),mx=Math.max.apply(null,out)||1,tot=out.reduce((a,b)=>a+b,0);
+  STREAMS.forEach((s,i)=>{$('#val-'+s.id).textContent=naira(out[i]);$('#bar-'+s.id).style.setProperty('--w',(out[i]/mx*100).toFixed(1)+'%');});
+  $('#totRev').textContent=naira(tot);$('#totCash').textContent=naira(v.drops*v.value*30);meter();
+}
+function meter(){
+  const rev=M.views*rate('ads')/1000+M.spValue*rate('fee')/100+M.sp*rate('visit')+M.mis*rate('mission')+M.tips;
+  $('#sesRev').textContent='₦'+rev.toLocaleString('en-NG',{minimumFractionDigits:2,maximumFractionDigits:2});
+  $('#mViews').textContent=M.views;$('#mSp').textContent=M.sp;$('#mMis').textContent=M.mis;$('#mTip').textContent=naira(M.tips);
+}
+$('#founder').addEventListener('input',calc);
+$('#founder').addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;$('#founder').classList.remove('open');go(b.dataset.go);});
+$('#openModel').addEventListener('click',()=>{$('#founder').classList.add('open');$('#founder').scrollTop=0;});
+$('#closeModel').addEventListener('click',()=>$('#founder').classList.remove('open'));
+
+function refresh(){if(S.tab==='drops')renderDrops();if(S.tab==='board')renderBoard();if(S.tab==='wallet')renderWallet();if(S.tab==='give')renderGive();meter();}
+
+/* ================= sponsor strip ================= */
+const ADS=Object.keys(SP).map(k=>SP[k]);let adI=-1;
+function nextAd(){
+  adI=(adI+1)%ADS.length;const a=ADS[adI];$('#adText').textContent=a.ad;$('#adDot').style.background=a.c;
+  const bar=$('#adBar');bar.classList.remove('run');void bar.offsetWidth;bar.classList.add('run');
+  if(S.tab==='hunt'&&!document.hidden){M.views++;meter();}
+}
+$('#ad').addEventListener('click',()=>{const a=ADS[adI],d=DROPS.find(x=>x.sp===a);if(d&&!d.by){select(d);toast('Targeting the '+a.name+' drop');}else toast('That drop has been claimed');});
+
+/* ================= map input ================= */
+let ptr=null;
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptr={x:e.clientX,y:e.clientY,lx:e.clientX,rot:false};
+  if(navigator.wakeLock&&!S.wake){S.wake=1;try{navigator.wakeLock.request('screen').catch(()=>{});}catch(_){}}});
+cv.addEventListener('pointermove',e=>{if(!ptr)return;if(!ptr.rot&&Math.abs(e.clientX-ptr.x)>9)ptr.rot=true;if(ptr.rot){cam.th+=(e.clientX-ptr.lx)*.006;ptr.lx=e.clientX;}});
+cv.addEventListener('pointerup',e=>{if(!ptr)return;const was=ptr;ptr=null;if(was.rot)return;
+  const r=cv.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top;
+  const d=live().find(d=>d.sx!=null&&Math.hypot(sx-d.sx,sy-d.sy)<Math.max(26,d.sr+12));
+  if(d){select(d);toast('Targeting '+d.place);return;}
+  const w=unproj(sx,sy);if(!w)return;w.x=clamp(w.x,15,985);w.y=clamp(w.y,20,745);S.walk=snapOut(w);});
+cv.addEventListener('pointercancel',()=>{ptr=null;});
+$('#rotL').addEventListener('click',()=>{cam.th-=.5;});
+$('#rotR').addEventListener('click',()=>{cam.th+=.5;});
+$('#walk').addEventListener('click',()=>{if(S.sel)S.walk={x:S.sel.x,y:S.sel.y};});
+$('#notifX').addEventListener('click',()=>{$('#notif').hidden=true;});
+$('#balPill').addEventListener('click',()=>go('wallet'));
+$$('.tab').forEach(b=>b.addEventListener('click',()=>go(b.dataset.tab)));
+
+/* ================= loop ================= */
+let last=performance.now(),tsec=0,hudT=0,listT=0,shown=-1;
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;tsec+=dt;
+  me.moving=false;
+  if(S.walk){const done=stepTo(me,S.walk.x,S.walk.y,SPEED*dt);me.moving=!done;if(done)S.walk=null;}
+  const lv=live();
+  NPC.forEach(n=>{
+    if(!n.tgt||n.tgt.by){n.tgt=null;if(lv.length>5){const taken=NPC.map(o=>o.tgt),c=lv.filter(d=>d!==S.sel&&taken.indexOf(d)<0).sort((a,b)=>dist(n,a)-dist(n,b));n.tgt=c[0]||null;}}
+    if(n.tgt){stepTo(n,n.tgt.x,n.tgt.y,n.sp*dt);if(dist(n,n.tgt)<8)npcClaim(n,n.tgt);}
+  });
+  hudT+=dt;if(hudT>.1){hudT=0;updateHud();}
+  listT+=dt;if(listT>1){listT=0;if(S.tab==='drops'&&me.moving)renderDrops();}
+  if(shown!==S.bal){shown=Math.abs(S.bal-shown)<1?S.bal:shown+(S.bal-shown)*Math.min(1,dt*9);$('#bal').textContent=Math.round(shown).toLocaleString('en-NG');}
+  if(S.tab==='hunt')draw(tsec,dt);
+  requestAnimationFrame(frame);
+}
+
+function start(saved){
+  saved=saved||{};
+  if(saved.bal!=null){S.bal=saved.bal;S.collected=saved.collected||0;S.given=saved.given||0;S.mine=saved.mine||0;
+    (saved.claimed||[]).forEach(c=>{const d=DROPS.find(x=>x.id===c[0]);if(d){d.by=c[1];d.at=c[2];}});
+    (saved.tx||[]).forEach(t=>TX.push(t));if(saved.me){me.x=saved.me[0];me.y=saved.me[1];}}
+  readTokens();resize();cs=Math.cos(cam.th);sn=Math.sin(cam.th);
+  const lv=live(),nd=nearestLive();
+  $('#notifText').textContent=lv.length+' drops worth '+naira(lv.reduce((a,d)=>a+d.amt,0))+' are hidden across campus. The nearest is '+(nd?Math.round(dist(me,nd)):0)+' m from you.';
+  select(nd);renderGive();calc();nextAd();setInterval(nextAd,6000);
+  if(window.ResizeObserver)new ResizeObserver(resize).observe(cv.parentElement);else addEventListener('resize',resize);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change',readTokens);
+  new MutationObserver(readTokens).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{});
+  requestAnimationFrame(frame);
+}
+const hot=window.claude&&window.claude.hot;
+try{if(hot&&hot.snapshot)hot.snapshot(()=>({bal:S.bal,collected:S.collected,given:S.given,mine:S.mine,me:[me.x,me.y],tx:TX,claimed:DROPS.filter(d=>d.by).map(d=>[d.id,d.by,d.at])}));}catch(_){}
+if(hot&&hot.ready)hot.ready(start);else start(hot&&hot.data);
+})();
+</script>
+
+</body></html>
